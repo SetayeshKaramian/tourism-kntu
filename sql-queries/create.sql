@@ -14,7 +14,9 @@ CREATE TABLE "User" (
     HashedPassword VARCHAR(255) NOT NULL,
     RegistrationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     AccountStatus VARCHAR(10) NOT NULL CHECK (AccountStatus IN ('Active', 'Inactive')),
-    UserType VARCHAR(20) NOT NULL CHECK (UserType IN ('Passenger', 'Supporter'))
+    UserType VARCHAR(20) NOT NULL CHECK (UserType IN ('Passenger', 'Supporter')),
+	CONSTRAINT email_format CHECK (Email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    CONSTRAINT phone_number_format CHECK (PhoneNumber ~ '^09\d{9}$')
 );
 
 -----------------------------------------------------------
@@ -30,7 +32,8 @@ CREATE TABLE Ticket (
     TicketPrice DECIMAL(10,2) NOT NULL CHECK (TicketPrice >= 0),
     RemainingCapacity INT NOT NULL CHECK (RemainingCapacity >= 0),
     CompanyID UUID,  -- Optional: if referencing a Company table
-    TravelClass VARCHAR(20) NOT NULL CHECK (TravelClass IN ('Economy', 'Business', 'VIP'))
+    TravelClass VARCHAR(20) NOT NULL CHECK (TravelClass IN ('Economy', 'Business', 'VIP')),
+	CONSTRAINT check_arrival_after_departure CHECK (ArrivalTime > DepartureTime)
 );
 
 -----------------------------------------------------------
