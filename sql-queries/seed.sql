@@ -12,7 +12,6 @@ VALUES
 ('Grace', 'Taylor', 'grace.taylor@example.com', '09901234567', 'Dallas', 'hashed_pass_9', 'Inactive', 'Passenger'),
 ('Henry', 'Anderson', 'henry.anderson@example.com', '09112345678', 'San Jose', 'hashed_pass_10', 'Active', 'Passenger');
 
--- Insert Tickets
 INSERT INTO Ticket (VehicleType, Origin, Destination, DepartureTime, ArrivalTime, TicketPrice, RemainingCapacity, TravelClass)
 VALUES
 ('Airplane', 'New York', 'Los Angeles', '2025-04-01 08:00', '2025-04-01 11:00', 250.00, 50, 'Economy'),
@@ -20,20 +19,26 @@ VALUES
 ('Bus', 'Phoenix', 'Philadelphia', '2025-04-03 09:00', '2025-04-04 09:00', 80.00, 40, 'VIP'),
 ('Airplane', 'San Antonio', 'San Diego', '2025-04-05 07:00', '2025-04-05 09:00', 180.00, 60, 'Business'),
 ('Train', 'Dallas', 'San Jose', '2025-04-06 06:00', '2025-04-06 12:00', 90.00, 70, 'Economy'),
-('Bus', 'Los Angeles', 'New York', '2025-04-07 20:00', '2025-04-09 08:00', 150.00, 35, 'Regular'),
-('Airplane', 'Houston', 'Chicago', '2025-04-08 15:00', '2025-04-08 18:00', 200.00, 45, 'First'),
+('Bus', 'Los Angeles', 'New York', '2025-04-07 20:00', '2025-04-09 08:00', 150.00, 35, 'Economy'),
+('Airplane', 'Houston', 'Chicago', '2025-04-08 15:00', '2025-04-08 18:00', 200.00, 45, 'Business'),
 ('Train', 'San Diego', 'Phoenix', '2025-04-09 11:00', '2025-04-09 17:00', 110.00, 80, 'Business'),
-('Bus', 'Philadelphia', 'Dallas', '2025-04-10 08:00', '2025-04-11 08:00', 75.00, 30, 'Sleeper'),
+('Bus', 'Philadelphia', 'Dallas', '2025-04-10 08:00', '2025-04-11 08:00', 75.00, 30, 'Economy'),
 ('Airplane', 'San Jose', 'New York', '2025-04-11 14:00', '2025-04-11 20:00', 300.00, 55, 'Economy'),
 ('Train', 'Houston', 'Los Angeles', '2025-04-12 09:00', '2025-04-12 17:00', 130.00, 60, 'Economy'),
 ('Bus', 'Chicago', 'Dallas', '2025-04-13 18:00', '2025-04-14 06:00', 95.00, 50, 'VIP'),
 ('Airplane', 'Philadelphia', 'San Antonio', '2025-04-14 10:00', '2025-04-14 14:00', 220.00, 70, 'Business'),
 ('Train', 'New York', 'Phoenix', '2025-04-15 05:00', '2025-04-15 15:00', 140.00, 75, 'Business'),
-('Bus', 'San Diego', 'Houston', '2025-04-16 08:00', '2025-04-17 08:00', 85.00, 30, 'Regular'),
-('Airplane', 'Los Angeles', 'Chicago', '2025-04-17 11:00', '2025-04-17 14:00', 270.00, 65, 'First'),
+('Bus', 'San Diego', 'Houston', '2025-04-16 08:00', '2025-04-17 08:00', 85.00, 30, 'Economy'),
+('Airplane', 'Los Angeles', 'Chicago', '2025-04-17 11:00', '2025-04-17 14:00', 270.00, 65, 'Business'),
 ('Train', 'Dallas', 'Philadelphia', '2025-04-18 07:00', '2025-04-18 18:00', 115.00, 90, 'Economy'),
-('Bus', 'San Jose', 'New York', '2025-04-19 22:00', '2025-04-21 10:00', 160.00, 40, 'Sleeper'),
-('Airplane', 'Phoenix', 'San Antonio', '2025-04-20 09:00', '2025-04-20 12:00', 210.00, 50, 'Business');
+('Bus', 'San Jose', 'New York', '2025-04-19 22:00', '2025-04-21 10:00', 160.00, 40, 'Economy'),
+('Airplane', 'Phoenix', 'San Antonio', '2025-04-20 09:00', '2025-04-20 12:00', 210.00, 50, 'Business'),
+('Train', 'Seattle', 'Boston', '2025-04-21 06:00', '2025-04-21 18:00', 150.00, 80, 'Business'),
+('Bus', 'Orlando', 'Denver', '2025-04-22 10:00', '2025-04-23 10:00', 100.00, 45, 'VIP'),
+('Airplane', 'Miami', 'San Francisco', '2025-04-23 08:00', '2025-04-23 12:00', 260.00, 55, 'Economy'),
+('Train', 'Boston', 'Seattle', '2025-04-24 09:00', '2025-04-24 21:00', 135.00, 85, 'Business'),
+('Bus', 'Denver', 'Orlando', '2025-04-25 11:00', '2025-04-26 11:00', 90.00, 50, 'Economy'),
+('Airplane', 'San Francisco', 'Miami', '2025-04-26 07:00', '2025-04-26 11:00', 280.00, 60, 'Business');
 
 -- Insert Reservations
 INSERT INTO Reservation (UserID, TicketID, ReservationStatus)
