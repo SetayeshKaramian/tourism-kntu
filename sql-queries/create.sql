@@ -72,12 +72,15 @@ CREATE TABLE Reports (
     ReportID UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     UserID UUID NOT NULL,
     TicketID UUID,  -- Optional: if the report relates to a specific ticket
+    PaymentID  UUID,  -- Optional: if the report relates to a specific payment
     ReportCategory VARCHAR(20) NOT NULL CHECK (ReportCategory IN ('PaymentIssue', 'Delay', 'Cancellation', 'Other')),
     ReportText TEXT,
     ReportStatus VARCHAR(20) DEFAULT 'Pending' CHECK (ReportStatus IN ('Reviewed', 'Pending')),
     ReportTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (UserID) REFERENCES "User"(UserID) ON DELETE CASCADE,
-    FOREIGN KEY (TicketID) REFERENCES Ticket(TicketID) ON DELETE SET NULL
+    FOREIGN KEY (TicketID) REFERENCES Ticket(TicketID) ON DELETE SET NULL,
+    FOREIGN KEY (PaymentID) REFERENCES Payment(PaymentID) ON DELETE SET NULL
+
 );
 
 -----------------------------------------------------------
