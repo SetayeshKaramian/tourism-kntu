@@ -80,6 +80,7 @@ CREATE TABLE Reports (
     FOREIGN KEY (UserID) REFERENCES "User"(UserID) ON DELETE CASCADE,
     FOREIGN KEY (TicketID) REFERENCES Ticket(TicketID) ON DELETE SET NULL,
     FOREIGN KEY (PaymentID) REFERENCES Payment(PaymentID) ON DELETE SET NULL
+)
 -----------------------------------------------------------
 -- 6. TrainDetails Table (Specialized Entity for Train Tickets)
 -----------------------------------------------------------
