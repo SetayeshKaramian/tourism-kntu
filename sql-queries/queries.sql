@@ -1,4 +1,68 @@
 -----------------------------------------------------------
+-- 1. نام و نام خانوادگی کسانی که هیچ بلیطی رزرو نکرده اند.
+-----------------------------------------------------------
+SELECT firstname, lastname 
+FROM "User"
+WHERE userid NOT IN (SELECT userid FROM reservation);
+
+-----------------------------------------------------------
+-- 2. نام و نام خانوادگی کسانی که حداقل یک بلیط رزرو کرده اند.
+-----------------------------------------------------------
+SELECT firstname, lastname 
+FROM "User"
+WHERE userid IN (SELECT userid FROM reservation);
+
+-----------------------------------------------------------
+-- 3. مجموع پرداختی هر کاربر در هر ماه.
+-----------------------------------------------------------
+SELECT userid, DATE_TRUNC('month', paymenttime) AS month, SUM(paymentamount)
+FROM payment
+GROUP BY userid, month
+
+-----------------------------------------------------------
+-- 4. کاربران هر شهر که فقط یک رزرو انجام داده اند.
+-----------------------------------------------------------
+SELECT city, userid 
+FROM "User"
+WHERE userid IN (
+    SELECT userid 
+    FROM payment 
+	  WHERE paymentstatus = 'Successful'
+    GROUP BY userid 
+    HAVING COUNT(userid) = 1
+)
+
+
+-----------------------------------------------------------
+-- 5. کاربری که جدید ترین بلیط را خریداری کرده است.
+-----------------------------------------------------------
+SELECT * FROM "User"
+WHERE userid IN (
+	SELECT userid FROM payment
+	WHERE paymentstatus = 'Successful' 
+	ORDER BY paymenttime DESC
+	LIMIT 1
+)
+
+-----------------------------------------------------------
+-- 6. ایمیل کاربرانی که مجموع پرداختی آن ها از میانگین بیشتر است.
+-----------------------------------------------------------
+SELECT u.email
+FROM "User" u
+JOIN payment p ON u.userid = p.userid
+GROUP BY u.Email
+HAVING SUM(p.paymentamount) > (SELECT AVG(paymentamount) FROM payment)
+
+-----------------------------------------------------------
+-- 7. تعداد بلیط های فروخته شده به تفکیک وسیله نقلیه.
+-----------------------------------------------------------
+SELECT t.vehicletype, COUNT(*) as numbers FROM ticket t 
+JOIN reservation r ON t.ticketid = r.ticketid 
+JOIN payment p ON p.reservationid = r.reservationid
+WHERE p.paymentstatus = 'Successful'
+GROUP BY t.vehicletype
+
+-----------------------------------------------------------
 -- 8. ام 3 کاربر با بیشترین خرید بلیط در هفته اخیر را برگردانید.
 -- we used inner join to insure just including reservations that have a corresponding successful payment.
 -----------------------------------------------------------
