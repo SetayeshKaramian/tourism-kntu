@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log"
 	"tourism/pkg/config"
 	"tourism/pkg/models"
 	"tourism/pkg/utils"
@@ -154,6 +155,37 @@ func GetTicketsWithOriginAndDestination(origin, destination string) []*models.Ti
 	query := `SELECT * FROM ticket WHERE origin = ? AND destination = ?`
 	db.Raw(query, origin, destination).Scan(&tickets)
 	return tickets
+}
+
+func GetTicketDetails(ticketid uuid.UUID) *models.TicketDetails {
+	var ticket *models.TicketDetails
+	query := `
+		SELECT 
+		t.ticketid AS ticket_id, t.vehicletype AS vehicle_type, t.origin, t.destination, 
+		t.departuretime AS departure_time, t.arrivaltime AS arrial_time, t.ticketprice AS ticket_price, 
+		t.remainingcapacity AS remaining_capacity, t.travelclass AS travel_class,
+		
+		tr.starrating AS train_star_rating, tr.amenities AS train_amenities, tr.iscoupeavailable
+		AS is_coupe_available,
+		
+		f.airlinename AS airline_name, f.flightclass AS flight_class, f.numberofstops AS number_of_stops,
+		f.flightnumber AS flight_number, 
+		f.originairport AS origin_airport, f.destinationairport AS destination_airport, 
+		f.amenities AS flight_amenities,
+		
+		b.buscompanyname AS bus_company_name, b.bustype AS bus_type, b.seatsperrow AS seats_per_row,
+		b.amenities AS bus_amenities
+		
+		FROM ticket t
+		LEFT JOIN traindetails tr ON t.ticketid = tr.ticketid AND t.vehicletype = 'Train'
+		LEFT JOIN flightdetails f ON t.ticketid = f.ticketid AND t.vehicletype = 'Airplane'
+		LEFT JOIN busdetails b ON t.ticketid = b.ticketid AND t.vehicletype = 'Bus'
+		WHERE t.ticketid = 
+	'` + ticketid.String() + `';`
+
+	log.Println(query)
+	db.Raw(query).Scan(&ticket)
+	return ticket
 }
 
 func GetCities() []string {

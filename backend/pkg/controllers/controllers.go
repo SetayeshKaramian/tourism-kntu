@@ -151,6 +151,23 @@ func GetTickets(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
+func GetTicket(w http.ResponseWriter, r * http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	ticketID, _ := uuid.Parse(ID) 
+	ticket := services.GetTicketDetails(ticketID)
+
+	result, err := json.Marshal(ticket)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
 func GetCities(w http.ResponseWriter, r *http.Request) {
 	cities := services.GetCities()
 	result, err := json.Marshal(cities)

@@ -32,3 +32,32 @@ type Ticket struct {
 	CompanyID        uuid.UUID `gorm:"column:companyid"`
 	TravelClass      string  `gorm:"column:travelclass"`
 }
+
+type TicketDetails struct {
+	TicketID         uuid.UUID    `json:"ticket_id"`
+	VehicleType      string    `json:"vehicle_type"`
+	Origin           string    `json:"origin"`
+	Destination      string    `json:"destination"`
+	DepartureTime    time.Time `json:"departure_time"`
+	ArrivalTime      time.Time `json:"arrival_time"`
+	TicketPrice      float64   `json:"ticket_price"`
+	RemainingCapacity int      `json:"remaining_capacity"`
+	TravelClass      string    `json:"travel_class"`
+
+	TrainStarRating   *string `json:"train_star_rating,omitempty"`
+	TrainAmenities    *string `json:"train_amenities,omitempty"`
+	IsCoupeAvailable  *bool   `json:"is_coupe_available,omitempty"`
+
+	AirlineName       *string `json:"airline_name,omitempty"`
+	FlightClass       *string `json:"flight_class,omitempty"`
+	NumberOfStops     *int    `json:"number_of_stops,omitempty"`
+	FlightNumber      *string `json:"flight_number,omitempty"`
+	OriginAirport     *string `json:"origin_airport,omitempty"`
+	DestinationAirport *string `json:"destination_airport,omitempty"`
+	FlightAmenities   *string `json:"flight_amenities,omitempty"`
+
+	BusCompanyName    string `json:"bus_company_name,omitempty"`
+	BusType           string `json:"bus_type,omitempty"`
+	SeatsPerRow       string `json:"seats_per_row,omitempty"`
+	BusAmenities      string `json:"bus_amenities,omitempty"`
+}
