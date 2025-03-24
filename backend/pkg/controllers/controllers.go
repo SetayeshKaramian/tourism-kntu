@@ -126,3 +126,27 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message": "User updated successfully"}`))
 }
+
+func GetTickets(w http.ResponseWriter, r *http.Request) {
+	var requestBody struct {
+		Origin      string `json:"origin"`
+		Destination string `json:"destination"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	tickets := services.GetTicketsWithOriginAndDestination(requestBody.Origin, requestBody.Destination)
+
+	result, err := json.Marshal(tickets)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}

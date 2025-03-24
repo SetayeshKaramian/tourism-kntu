@@ -19,3 +19,16 @@ type User struct {
 	AccountStatus   	*string    `gorm:"column:accountstatus"`
 	UserType        	*string    `gorm:"column:usertype"`
 }
+
+type Ticket struct {
+	TicketID         uuid.UUID  `gorm:"column:ticketid"`
+	VehicleType      string  `gorm:"column:vehicletype"`
+	Origin           string  `gorm:"column:origin"`
+	Destination      string  `gorm:"column:destination"`
+	DepartureTime    time.Time  `gorm:"column:departuretime"`
+	ArrivalTime      time.Time  `gorm:"column:arrivaltime"`
+	TicketPrice      float64 `gorm:"column:ticketprice"`
+	RemainingCapacity int    `gorm:"column:remainingcapacity"`
+	CompanyID        uuid.UUID `gorm:"column:companyid"`
+	TravelClass      string  `gorm:"column:travelclass"`
+}

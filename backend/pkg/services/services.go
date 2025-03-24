@@ -148,3 +148,10 @@ func UpdateUser(updateData models.User, currentUser models.User) error {
 	}
 	return nil
 }
+
+func GetTicketsWithOriginAndDestination(origin, destination string) []*models.Ticket {
+	var tickets []*models.Ticket
+	query := `SELECT * FROM ticket WHERE origin = ? AND destination = ?`
+	db.Raw(query, origin, destination).Scan(&tickets)
+	return tickets
+}
