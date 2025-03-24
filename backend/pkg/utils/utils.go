@@ -81,7 +81,9 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		}
 
 		var user gorm.Model
-		if err := db.First(&user, "id = ?", userID).Error; err != nil {
+		query := `SELECT * FROM "User" WHERE userid = ? LIMIT 1`
+		result := db.Raw(query, userID).Scan(&user)
+		if result.Error != nil {
 			http.Error(w, "User not found", http.StatusUnauthorized)
 			return
 		}

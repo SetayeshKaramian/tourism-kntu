@@ -2,6 +2,7 @@ package routes
 
 import (
 	"tourism/pkg/controllers"
+
 	"github.com/gorilla/mux"
 )
 
