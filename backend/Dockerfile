@@ -8,4 +8,4 @@ RUN go mod download
 
 COPY . .
 
-CMD bash -c "go run ./cmd/main.go"
+CMD bash -c "go run ./cmd/*.go"
