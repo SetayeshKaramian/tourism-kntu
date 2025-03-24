@@ -155,3 +155,10 @@ func GetTicketsWithOriginAndDestination(origin, destination string) []*models.Ti
 	db.Raw(query, origin, destination).Scan(&tickets)
 	return tickets
 }
+
+func GetCities() []string {
+	var cities []string
+	query := `SELECT DISTINCT destination FROM ticket`
+	db.Raw(query).Scan(&cities)
+	return cities
+}

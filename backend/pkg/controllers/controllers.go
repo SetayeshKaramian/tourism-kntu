@@ -150,3 +150,16 @@ func GetTickets(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
 }
+
+func GetCities(w http.ResponseWriter, r *http.Request) {
+	cities := services.GetCities()
+	result, err := json.Marshal(cities)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
