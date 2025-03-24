@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 	"tourism/pkg/config"
+	"tourism/pkg/models"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -25,8 +26,8 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-var db *gorm.DB = config.GetDB()
-var redisClient *redis.Client = config.GetRedis()
+var db *gorm.DB
+var redisClient *redis.Client
 var jwtKey = []byte("mySecretKey")
 type ContextKey string
 const UserContextKey ContextKey = "user"
@@ -36,8 +37,14 @@ var Purposes = map[string]string{
 }
 
 type CustomClaims struct {
-    UserID string `json:"user_id"`
+    UserID string
     jwt.RegisteredClaims
+}
+
+func init() {
+	config.Connect()
+	db = config.GetDB()
+	redisClient = config.GetRedis()
 }
 
 func GenerateJWT(id uuid.UUID) (string, error) {
@@ -80,13 +87,14 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		var user gorm.Model
+		var user models.User
 		query := `SELECT * FROM "User" WHERE userid = ? LIMIT 1`
 		result := db.Raw(query, userID).Scan(&user)
 		if result.Error != nil {
 			http.Error(w, "User not found", http.StatusUnauthorized)
 			return
 		}
+		log.Println(user.UserID, "////")
 		
 		ctx := context.WithValue(r.Context(), UserContextKey, &user)
 		next.ServeHTTP(w, r.WithContext(ctx))
