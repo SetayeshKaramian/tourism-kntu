@@ -211,3 +211,26 @@ func GetCities() []string {
 	db.Raw(query).Scan(&cities)
 	return cities
 }
+
+func GetMyTickets(userid uuid.UUID) []*models.TicketList {
+	var tickets []*models.TicketList
+	query := `SELECT t.*, r.reservationstatus AS reservation_status, r.reservationtime AS reservation_time
+	FROM ticket t JOIN reservation r ON t.ticketid = r.ticketid WHERE r.userid = '` + userid.String() + `';`
+	db.Raw(query).Scan(&tickets)
+	return tickets
+}
+
+func CreateReport(report models.Report) (string, error) {
+	query := `
+		INSERT INTO reports (userid, ticketid, paymentid, reportcategory, reporttext, reportstatus, reporttime)
+		VALUES (?, ?, ?, ?, ?, ?, NOW())
+		RETURNING reportid;
+	`
+	var reportID string
+	err := db.Raw(query, report.UserID, report.TicketID, report.PaymentID, report.ReportCategory, 
+		report.ReportText, "Pending").Scan(&reportID).Error
+	if err != nil {
+		return "", errors.New("query not executed")
+	}
+	return reportID, nil
+}

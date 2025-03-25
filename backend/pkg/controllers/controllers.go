@@ -23,7 +23,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			Password string `json:"password"`
 		}
 		var loginReq LoginRequest
-			err := json.NewDecoder(r.Body).Decode(&loginReq)
+		err := json.NewDecoder(r.Body).Decode(&loginReq)
 		if err != nil {
 			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
 			return
@@ -174,4 +174,36 @@ func GetCities(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
+}
+
+func GetMyTickets(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+
+	ticketsList := services.GetMyTickets(user.UserID)
+	result, err := json.Marshal(ticketsList)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
+func MakeReport(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	var requestBody models.Report
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	requestBody.UserID = user.UserID
+	reportID, err := services.CreateReport(requestBody)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(fmt.Sprintf(`{"reportId": "%s"}`, reportID)))
 }

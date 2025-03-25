@@ -61,3 +61,19 @@ type TicketDetails struct {
 	SeatsPerRow       string `json:"seats_per_row,omitempty"`
 	BusAmenities      string `json:"bus_amenities,omitempty"`
 }
+
+type TicketList struct {
+	Ticket	`json:"ticket"`
+	ReservationStatus string `json:"reservation_status"`
+	ReservationTime time.Time `json:"reservation_time"`
+}
+
+type Report struct {
+	UserID         uuid.UUID    `json:"user_id" binding:"required,uuid"`
+	TicketID       *uuid.UUID   `json:"ticket_id,omitempty" binding:"omitempty,uuid"`  
+	PaymentID      *uuid.UUID   `json:"payment_id,omitempty" binding:"omitempty,uuid"` 
+	ReportCategory string    	`json:"report_category" binding:"required,oneof=PaymentIssue Delay Cancellation Other"`
+	ReportText     string    	`json:"report_text,omitempty"` 
+	ReportStatus   *string    	`json:"report_status,omitempty" binding:"omitempty,oneof=Reviewed Pending"`
+	ReportTime     time.Time 	`json:"report_time,omitempty"`
+}

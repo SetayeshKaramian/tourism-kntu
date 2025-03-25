@@ -94,7 +94,6 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "User not found", http.StatusUnauthorized)
 			return
 		}
-		log.Println(user.UserID, "////")
 		
 		ctx := context.WithValue(r.Context(), UserContextKey, &user)
 		next.ServeHTTP(w, r.WithContext(ctx))
