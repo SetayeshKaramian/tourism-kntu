@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-
 	"net/http"
 	"tourism/pkg/models"
 	"tourism/pkg/services"
@@ -128,17 +127,13 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTickets(w http.ResponseWriter, r *http.Request) {
-	var requestBody struct {
-		Origin      string `json:"origin"`
-		Destination string `json:"destination"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&requestBody)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+	origin := utils.GetStringPointer(r.URL.Query().Get("origin"))
+	destination := utils.GetStringPointer(r.URL.Query().Get("destination"))
+	vehicle_type := utils.GetStringPointer(r.URL.Query().Get("vehicle_type"))
+	arrival_time := utils.GetStringPointer(r.URL.Query().Get("arrival_time"))
+	departure_time := utils.GetStringPointer(r.URL.Query().Get("departure_time"))
 
-	tickets := services.GetTicketsWithOriginAndDestination(requestBody.Origin, requestBody.Destination)
+	tickets := services.GetTicketsWithDetails(origin, destination, vehicle_type, arrival_time, departure_time)
 
 	result, err := json.Marshal(tickets)
 	if err != nil {

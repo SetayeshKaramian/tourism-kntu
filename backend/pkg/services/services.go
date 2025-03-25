@@ -150,10 +150,27 @@ func UpdateUser(updateData models.User, currentUser models.User) error {
 	return nil
 }
 
-func GetTicketsWithOriginAndDestination(origin, destination string) []*models.Ticket {
+func GetTicketsWithDetails(origin, destination, vehicleType, departureTime, arrivalTime *string) []*models.Ticket {
 	var tickets []*models.Ticket
-	query := `SELECT * FROM ticket WHERE origin = ? AND destination = ?`
-	db.Raw(query, origin, destination).Scan(&tickets)
+	query := `SELECT * FROM ticket WHERE `
+	
+	if origin != nil {
+		query += `origin = '` + *origin + `' AND `
+	}
+	if destination != nil {
+		query += `destination = '` + *destination + `' AND `
+	}
+	if vehicleType != nil {
+		query += `vehicletype = '` + *vehicleType + `' AND `
+	}
+	if departureTime != nil {
+		query += `departuretime > '` + *departureTime + `' AND `
+	}
+	if arrivalTime != nil {
+		query += `arrivaltime < '` + *arrivalTime + `' AND `
+	}
+	query = query[:len(query) - 4]
+	db.Raw(query).Scan(&tickets)
 	return tickets
 }
 

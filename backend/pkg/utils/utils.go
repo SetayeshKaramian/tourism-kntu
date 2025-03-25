@@ -121,3 +121,10 @@ func ValidateOTP(phoneNumber, purpose, otp string) bool {
 	}
 	return true
 }
+
+func GetStringPointer(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
