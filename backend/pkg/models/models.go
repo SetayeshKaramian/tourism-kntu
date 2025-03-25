@@ -69,6 +69,7 @@ type TicketList struct {
 }
 
 type Report struct {
+	ReportID	   uuid.UUID	`json:"report_id"`	
 	UserID         uuid.UUID    `json:"user_id" binding:"required,uuid"`
 	TicketID       *uuid.UUID   `json:"ticket_id,omitempty" binding:"omitempty,uuid"`  
 	PaymentID      *uuid.UUID   `json:"payment_id,omitempty" binding:"omitempty,uuid"` 

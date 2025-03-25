@@ -234,3 +234,12 @@ func CreateReport(report models.Report) (string, error) {
 	}
 	return reportID, nil
 }
+
+func GetAllReports() []*models.Report {
+	var reports []*models.Report
+	query := `SELECT reportid AS report_id, userid AS user_id, paymentid AS payment_id,
+	ticketid AS ticket_id, reportcategory AS report_category, reportstatus AS report_status,
+	reporttext AS resport_text, reporttime AS report_time FROM reports`
+	db.Raw(query).Scan(&reports)
+	return reports
+}

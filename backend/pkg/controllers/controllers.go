@@ -10,8 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	// "github.com/google/uuid"
-	// "github.com/gorilla/mux"
 )
 
 
@@ -206,4 +204,22 @@ func MakeReport(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(fmt.Sprintf(`{"reportId": "%s"}`, reportID)))
+}
+
+func GetAllReports(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	if *user.UserType != "Supporter" {
+		http.Error(w, "you do not have permission", http.StatusForbidden)
+	}
+
+	reports := services.GetAllReports()
+	result, err := json.Marshal(reports)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
 }
