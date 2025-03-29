@@ -223,3 +223,21 @@ func GetAllReports(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
 }
+
+func GetAllCancelledTickets(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	if *user.UserType != "Supporter" {
+		http.Error(w, "you do not have permission", http.StatusForbidden)
+	}
+
+	tickets := services.GetAllCancelledTickets()
+	result, err := json.Marshal(tickets)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}

@@ -2,7 +2,6 @@ package models
 
 import (
 	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -56,10 +55,10 @@ type TicketDetails struct {
 	DestinationAirport *string `json:"destination_airport,omitempty"`
 	FlightAmenities   *string `json:"flight_amenities,omitempty"`
 
-	BusCompanyName    string `json:"bus_company_name,omitempty"`
-	BusType           string `json:"bus_type,omitempty"`
-	SeatsPerRow       string `json:"seats_per_row,omitempty"`
-	BusAmenities      string `json:"bus_amenities,omitempty"`
+	BusCompanyName    *string `json:"bus_company_name,omitempty"`
+	BusType           *string `json:"bus_type,omitempty"`
+	SeatsPerRow       *string `json:"seats_per_row,omitempty"`
+	BusAmenities      *string `json:"bus_amenities,omitempty"`
 }
 
 type TicketList struct {

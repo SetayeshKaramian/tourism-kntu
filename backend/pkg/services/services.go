@@ -243,3 +243,11 @@ func GetAllReports() []*models.Report {
 	db.Raw(query).Scan(&reports)
 	return reports
 }
+
+func GetAllCancelledTickets() []*models.TicketList {
+	var tickets []*models.TicketList
+	query := `SELECT t.*, r.reservationstatus AS reservation_status, r.reservationtime AS reservation_time
+	FROM ticket t JOIN reservation r ON t.ticketid = r.ticketid WHERE r.reservationstatus = 'Reserved'`
+	db.Raw(query).Scan(&tickets)
+	return tickets
+}
