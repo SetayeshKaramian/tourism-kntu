@@ -205,12 +205,32 @@ func ReserveTicket(w http.ResponseWriter, r *http.Request) {
 	requestBody.UserID = user.UserID
 	reservationid, err := services.ReserveTicket(requestBody.UserID, requestBody.TicketID, requestBody.Number)
 	if err != nil {
-		//utils.Rollback()
 		http.Error(w, "could not do this", http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"reservation_id": "%s"}`, reservationid)))
+}
+
+func PayReservation(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	vars := mux.Vars(r)
+	reservationid, exists := vars["id"]  
+	if !exists {
+		http.Error(w, "Reservation ID is required", http.StatusBadRequest)
+		return
+	}
+	reservationID, _ := uuid.Parse(reservationid)
+
+	paymentid, err := services.PayReservation(user.UserID, reservationID)
+	
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Payment failed"))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`{"payment_id": "%s"}`, paymentid)))
 }
 
 func MakeReport(w http.ResponseWriter, r *http.Request) {

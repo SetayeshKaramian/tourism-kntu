@@ -20,4 +20,5 @@ var RegisterRoutes = func(router *mux.Router) {
 	router.Handle("/reports/", utils.JWTMiddleware(http.HandlerFunc(controllers.GetAllReports))).Methods("GET")
 	router.Handle("/cancelled/tickets/", utils.JWTMiddleware(http.HandlerFunc(controllers.GetAllCancelledTickets))).Methods("GET")
 	router.Handle("/reserve/ticket/", utils.JWTMiddleware(http.HandlerFunc(controllers.ReserveTicket))).Methods("POST")
+	router.Handle("/pay/reservation/{id}/", utils.JWTMiddleware(http.HandlerFunc(controllers.PayReservation))).Methods("POST")
 }

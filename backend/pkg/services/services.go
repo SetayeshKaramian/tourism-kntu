@@ -252,6 +252,57 @@ func ReserveTicket(userid, ticketid uuid.UUID, number int) (string, error) {
 	return reservationid, nil
 }
 
+func PayReservation(userid, reservationid uuid.UUID) (string, error) {
+	var paymentid string;
+	var amount int;
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return "", tx.Error
+	}
+	base_query := `
+		SELECT CAST(r.number * t.ticketprice AS BIGINT) as amount
+		FROM reservation r JOIN ticket t ON r.ticketid = t.ticketid
+		WHERE r.reservationid = $1
+		`
+	if err := tx.Raw(base_query, reservationid).Scan(&amount).Error; err != nil {
+		tx.Rollback() 
+		return "", err
+	}
+
+	query1 := `
+		UPDATE "User" 
+		SET credit = credit - $1 
+		WHERE userid = $2`
+	if err := tx.Exec(query1, amount, userid).Error; err != nil {
+		tx.Rollback() 
+		return "", err
+	}
+
+	query2 := `
+		UPDATE reservation 
+		SET reservationstatus = 'Paid'
+		WHERE reservationid = $1`
+	if err := tx.Exec(query2, reservationid).Error; err != nil {
+		tx.Rollback() 
+		return "", err
+	}
+
+	query3 := `
+		INSERT INTO payment (userid, reservationid, paymentamount, paymentmethod, paymentstatus) VALUES
+		($1, $2, $3, 'Wallet', 'Successful')
+		RETURNING paymentid`
+	if err := tx.Raw(query3, userid, reservationid, amount).Scan(&paymentid).Error; err != nil {
+		tx.Rollback() 
+		return "", err
+	}
+	if err := tx.Commit().Error; err != nil {
+		return "", err
+	}
+
+	return paymentid, nil
+}
+
 func CreateReport(report models.Report) (string, error) {
 	query := `
 		INSERT INTO reports (userid, ticketid, paymentid, reportcategory, reporttext, reportstatus, reporttime)
