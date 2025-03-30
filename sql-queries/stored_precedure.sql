@@ -138,3 +138,98 @@ $$;
 
 CALL get_citizens_proc('09112345678');
 FETCH ALL FROM get_citizens_cursor;
+
+-----------------------------------------------------------
+--6.  کاربری که از آن تاریخ به بعد بیشترین خرید بلیط را داشتند نمایش دهید n تاریخ و تعداد را به عنوان ورودی دریافت کرده و لیست.
+-----------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE GetTopUsersByTickets_Proc(
+    IN p_start_date TIMESTAMP, 
+    IN p_limit INT
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    user_cursor refcursor;
+BEGIN
+    user_cursor := 'user_cursor';
+    
+    OPEN user_cursor FOR 
+        SELECT 
+            u.UserID, 
+            u.FirstName, 
+            u.LastName, 
+            COUNT(r.ReservationID) AS TicketCount
+        FROM "User" u
+        JOIN Reservation r ON u.UserID = r.UserID
+        WHERE r.ReservationTime >= p_start_date
+        GROUP BY u.UserID, u.FirstName, u.LastName
+        ORDER BY TicketCount DESC
+        LIMIT p_limit;
+END;
+$$;
+
+
+CALL GetTopUsersByTickets_Proc('2025-01-01', 5);
+FETCH ALL FROM user_cursor;
+
+-----------------------------------------------------------
+--7.با دریافت نوع وسیله نقلیه، لیست بلیط های کنسل شده مربوط به آن را به ترتیب تاریخ نمایش دهید.
+-----------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE GetCancelledTicketsByVehicle_Proc(
+    IN p_vehicle_type VARCHAR
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    ticket_cursor refcursor;
+BEGIN
+    ticket_cursor := 'ticket_cursor';
+    
+    OPEN ticket_cursor FOR 
+        SELECT 
+            t.TicketID, 
+            t.Origin, 
+            t.Destination, 
+            t.DepartureTime
+        FROM Ticket t
+        JOIN Reservation r ON t.TicketID = r.TicketID
+        WHERE r.ReservationStatus = 'Cancelled' 
+          AND t.VehicleType = p_vehicle_type
+        ORDER BY t.DepartureTime;
+END;
+$$;
+
+
+CALL GetCancelledTicketsByVehicle_Proc('Airplane');
+FETCH ALL FROM ticket_cursor;
+
+-----------------------------------------------------------
+--8.با دریافت موضوع گزارش، لیست کاربرانی که بیشترین گزارش در آن موضوع دارند را نمایش دهید.
+-----------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE GetTopReportersByCategory_Proc(
+    IN p_report_category VARCHAR
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    report_cursor refcursor;
+BEGIN
+    report_cursor := 'report_cursor';
+    
+    OPEN report_cursor FOR 
+        SELECT 
+            u.UserID, 
+            u.FirstName, 
+            u.LastName, 
+            COUNT(r.ReportID) AS ReportCount
+        FROM "User" u
+        JOIN Reports r ON u.UserID = r.UserID
+        WHERE r.ReportCategory = p_report_category
+        GROUP BY u.UserID, u.FirstName, u.LastName
+        ORDER BY ReportCount DESC;
+END;
+$$;
+
+
+CALL GetTopReportersByCategory_Proc('PaymentIssue');
+FETCH ALL FROM report_cursor;
