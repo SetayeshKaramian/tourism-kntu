@@ -65,6 +65,7 @@ type TicketList struct {
 	Ticket	`json:"ticket"`
 	ReservationStatus string `json:"reservation_status"`
 	ReservationTime time.Time `json:"reservation_time"`
+	Number 	int 	`json:"number"`
 }
 
 type Report struct {

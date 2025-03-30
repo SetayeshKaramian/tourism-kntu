@@ -127,3 +127,7 @@ func GetStringPointer(s string) *string {
 	}
 	return &s
 }
+
+func Rollback() {
+	db.Raw("ROLLBACK;")
+}

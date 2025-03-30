@@ -214,10 +214,42 @@ func GetCities() []string {
 
 func GetMyTickets(userid uuid.UUID) []*models.TicketList {
 	var tickets []*models.TicketList
-	query := `SELECT t.*, r.reservationstatus AS reservation_status, r.reservationtime AS reservation_time
+	query := `SELECT t.*, r.reservationstatus AS reservation_status, r.reservationtime AS reservation_time, r.number
 	FROM ticket t JOIN reservation r ON t.ticketid = r.ticketid WHERE r.userid = '` + userid.String() + `';`
 	db.Raw(query).Scan(&tickets)
 	return tickets
+}
+
+func ReserveTicket(userid, ticketid uuid.UUID, number int) (string, error) {
+	var reservationid string
+
+	tx := db.Begin()
+	if tx.Error != nil {
+		return "", tx.Error
+	}
+
+	query1 := `
+		UPDATE ticket 
+		SET remainingcapacity = remainingcapacity - $1 
+		WHERE ticketid = $2`
+	if err := tx.Exec(query1, number, ticketid).Error; err != nil {
+		tx.Rollback() 
+		return "", err
+	}
+
+	query2 := `
+		INSERT INTO reservation (userid, ticketid, reservationstatus, number) 
+		VALUES ($1, $2, $3, $4) RETURNING reservationid`
+	if err := tx.Raw(query2, userid, ticketid, "Reserved", number).Scan(&reservationid).Error; err != nil {
+		tx.Rollback() 
+		return "", err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return "", err
+	}
+
+	return reservationid, nil
 }
 
 func CreateReport(report models.Report) (string, error) {

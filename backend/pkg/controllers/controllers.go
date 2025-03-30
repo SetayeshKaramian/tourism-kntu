@@ -189,6 +189,30 @@ func GetMyTickets(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
+func ReserveTicket(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	var requestBody struct {
+		UserID uuid.UUID `json:"user_id"`
+		TicketID uuid.UUID `json:"ticket_id"`
+		ReservationStatus string `json:"reservation_status"`
+		Number int `json:"number"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	requestBody.UserID = user.UserID
+	reservationid, err := services.ReserveTicket(requestBody.UserID, requestBody.TicketID, requestBody.Number)
+	if err != nil {
+		//utils.Rollback()
+		http.Error(w, "could not do this", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`{"reservation_id": "%s"}`, reservationid)))
+}
+
 func MakeReport(w http.ResponseWriter, r *http.Request) {
 	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
 	var requestBody models.Report
