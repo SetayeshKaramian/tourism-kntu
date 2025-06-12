@@ -2,7 +2,9 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"time"
 	"tourism/pkg/config"
 	"tourism/pkg/models"
 	"tourism/pkg/utils"
@@ -12,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB 
+var db *gorm.DB
 
 func init() {
 	config.Connect()
@@ -39,7 +41,6 @@ func GetUserForLogin(phonenumber, password string) (map[string]interface{}, erro
 	return user, nil
 }
 
-
 func GetUserIDWithPhoneNumber(phoneNumber string) (uuid.UUID, error) {
 	var userID string
 	result := db.Raw(`SELECT userid FROM "User" WHERE phonenumber = ? LIMIT 1`, phoneNumber).Scan(&userID)
@@ -58,7 +59,7 @@ func GetUserIDWithPhoneNumber(phoneNumber string) (uuid.UUID, error) {
 	return parsedUserID, nil
 }
 
-func CreateNewUser(newUser models.User) (models.User, error){
+func CreateNewUser(newUser models.User) (models.User, error) {
 	query := `INSERT INTO "User" (FirstName, LastName, Email, PhoneNumber, City, HashedPassword, AccountStatus, UserType) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
 		RETURNING UserID, FirstName, LastName, Email, PhoneNumber, City, HashedPassword, AccountStatus, UserType, RegistrationDate`
@@ -69,7 +70,7 @@ func CreateNewUser(newUser models.User) (models.User, error){
 	}
 
 	sqlDB, _ := db.DB()
-	var createdUser models.User;
+	var createdUser models.User
 	query_error := sqlDB.QueryRow(query,
 		newUser.FirstName,
 		newUser.LastName,
@@ -88,7 +89,7 @@ func CreateNewUser(newUser models.User) (models.User, error){
 		&createdUser.HashedPassword,
 		&createdUser.AccountStatus,
 		&createdUser.UserType,
-		&createdUser.RegistrationDate,)
+		&createdUser.RegistrationDate)
 	if query_error != nil {
 		return models.User{}, err
 	}
@@ -119,7 +120,7 @@ func UpdateUser(updateData models.User, currentUser models.User) error {
 		argCounter++
 	}
 	if updateData.City != nil {
-		query += `city = '` +  *updateData.City + `', `
+		query += `city = '` + *updateData.City + `', `
 		argCounter++
 	}
 	if updateData.AccountStatus != nil {
@@ -134,7 +135,7 @@ func UpdateUser(updateData models.User, currentUser models.User) error {
 	if argCounter == 0 {
 		return errors.New("no field to update")
 	}
-	query = query[:len(query)-2] 
+	query = query[:len(query)-2]
 
 	query += ` WHERE userid = '` + userID.String() + `';`
 
@@ -153,7 +154,7 @@ func UpdateUser(updateData models.User, currentUser models.User) error {
 func GetTicketsWithDetails(origin, destination, vehicleType, departureTime, arrivalTime *string) []*models.Ticket {
 	var tickets []*models.Ticket
 	query := `SELECT * FROM ticket WHERE `
-	
+
 	if origin != nil {
 		query += `origin = '` + *origin + `' AND `
 	}
@@ -169,7 +170,7 @@ func GetTicketsWithDetails(origin, destination, vehicleType, departureTime, arri
 	if arrivalTime != nil {
 		query += `arrivaltime < '` + *arrivalTime + `' AND `
 	}
-	query = query[:len(query) - 4]
+	query = query[:len(query)-4]
 	db.Raw(query).Scan(&tickets)
 	return tickets
 }
@@ -233,7 +234,7 @@ func ReserveTicket(userid, ticketid uuid.UUID, number int) (string, error) {
 		SET remainingcapacity = remainingcapacity - $1 
 		WHERE ticketid = $2`
 	if err := tx.Exec(query1, number, ticketid).Error; err != nil {
-		tx.Rollback() 
+		tx.Rollback()
 		return "", err
 	}
 
@@ -241,7 +242,7 @@ func ReserveTicket(userid, ticketid uuid.UUID, number int) (string, error) {
 		INSERT INTO reservation (userid, ticketid, reservationstatus, number) 
 		VALUES ($1, $2, $3, $4) RETURNING reservationid`
 	if err := tx.Raw(query2, userid, ticketid, "Reserved", number).Scan(&reservationid).Error; err != nil {
-		tx.Rollback() 
+		tx.Rollback()
 		return "", err
 	}
 
@@ -253,8 +254,8 @@ func ReserveTicket(userid, ticketid uuid.UUID, number int) (string, error) {
 }
 
 func PayReservation(userid, reservationid uuid.UUID) (string, error) {
-	var paymentid string;
-	var amount int;
+	var paymentid string
+	var amount int
 
 	tx := db.Begin()
 	if tx.Error != nil {
@@ -266,7 +267,7 @@ func PayReservation(userid, reservationid uuid.UUID) (string, error) {
 		WHERE r.reservationid = $1
 		`
 	if err := tx.Raw(base_query, reservationid).Scan(&amount).Error; err != nil {
-		tx.Rollback() 
+		tx.Rollback()
 		return "", err
 	}
 
@@ -275,7 +276,7 @@ func PayReservation(userid, reservationid uuid.UUID) (string, error) {
 		SET credit = credit - $1 
 		WHERE userid = $2`
 	if err := tx.Exec(query1, amount, userid).Error; err != nil {
-		tx.Rollback() 
+		tx.Rollback()
 		return "", err
 	}
 
@@ -284,7 +285,7 @@ func PayReservation(userid, reservationid uuid.UUID) (string, error) {
 		SET reservationstatus = 'Paid'
 		WHERE reservationid = $1`
 	if err := tx.Exec(query2, reservationid).Error; err != nil {
-		tx.Rollback() 
+		tx.Rollback()
 		return "", err
 	}
 
@@ -293,7 +294,7 @@ func PayReservation(userid, reservationid uuid.UUID) (string, error) {
 		($1, $2, $3, 'Wallet', 'Successful')
 		RETURNING paymentid`
 	if err := tx.Raw(query3, userid, reservationid, amount).Scan(&paymentid).Error; err != nil {
-		tx.Rollback() 
+		tx.Rollback()
 		return "", err
 	}
 	if err := tx.Commit().Error; err != nil {
@@ -310,7 +311,7 @@ func CreateReport(report models.Report) (string, error) {
 		RETURNING reportid;
 	`
 	var reportID string
-	err := db.Raw(query, report.UserID, report.TicketID, report.PaymentID, report.ReportCategory, 
+	err := db.Raw(query, report.UserID, report.TicketID, report.PaymentID, report.ReportCategory,
 		report.ReportText, "Pending").Scan(&reportID).Error
 	if err != nil {
 		return "", errors.New("query not executed")
@@ -333,4 +334,94 @@ func GetAllCancelledTickets() []*models.TicketList {
 	FROM ticket t JOIN reservation r ON t.ticketid = r.ticketid WHERE r.reservationstatus = 'Reserved'`
 	db.Raw(query).Scan(&tickets)
 	return tickets
+}
+
+func CheckCancellationPenalty(userID, ticketID uuid.UUID) models.Penalty {
+	ticketDetails := GetTicketDetails(ticketID)
+	penaltyPercentage := 0.3
+	switch ticketDetails.VehicleType {
+	case "Train":
+		penaltyPercentage = 0.2
+		if time.Until(ticketDetails.DepartureTime) < 24*time.Hour {
+			penaltyPercentage = 0.8
+		}
+
+	case "Airplane":
+		penaltyPercentage = 0.3
+		if time.Until(ticketDetails.DepartureTime) < 48*time.Hour && *ticketDetails.AirlineName == "Iran Air" {
+			{
+				penaltyPercentage = 0.9
+			}
+		}
+	case "Bus":
+		penaltyPercentage = 0.1
+		if time.Until(ticketDetails.DepartureTime) < 12*time.Hour {
+			penaltyPercentage = 0.5
+		}
+	}
+	return models.Penalty{
+		UserID:            userID,
+		TicketID:          ticketID,
+		PenaltyAmount:     int64(float64(ticketDetails.TicketPrice) * penaltyPercentage),
+		PenaltyPercentage: penaltyPercentage,
+		RefundAmount:      int64(float64(ticketDetails.TicketPrice) * (1 - penaltyPercentage)),
+	}
+}
+
+func CancelReservation(userID, ticketIDuuid uuid.UUID) error {
+	penalty := CheckCancellationPenalty(userID, ticketIDuuid)
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	query1 := `UPDATE ticket SET deletedat = NOW() WHERE ticketid = ?`
+	if err := tx.Exec(query1, ticketIDuuid).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	query2 := `UPDATE "User" SET credit = credit + ? WHERE userid = ?`
+	if err := tx.Exec(query2, penalty.RefundAmount, userID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	query3 := `UPDATE reservation SET reservationstatus = 'Cancelled' WHERE userid = ? AND ticketid = ?`
+	if err := tx.Exec(query3, userID, ticketIDuuid).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateTicket(ticket models.Ticket) error {
+	sqlDB, _ := db.DB()
+	query := `
+		UPDATE ticket 
+		SET origin = $1, destination = $2, departuretime = $3, arrivaltime = $4, 
+		ticketprice = $5, remainingcapacity = $6, travelclass = $7 
+		WHERE ticketid = $8`
+	result, err := sqlDB.Exec(query,
+		ticket.Origin,
+		ticket.Destination,
+		ticket.DepartureTime,
+		ticket.ArrivalTime,
+		ticket.TicketPrice,
+		ticket.RemainingCapacity,
+		ticket.TravelClass,
+		ticket.TicketID)
+	if err != nil {
+		fmt.Errorf("query not executed %w", err)
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return errors.New("ticket not found")
+	}
+	return nil
 }

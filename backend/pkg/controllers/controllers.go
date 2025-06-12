@@ -12,13 +12,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		type LoginRequest struct {
 			PhoneNumber string `json:"phonenumber"`
-			Password string `json:"password"`
+			Password    string `json:"password"`
 		}
 		var loginReq LoginRequest
 		err := json.NewDecoder(r.Body).Decode(&loginReq)
@@ -26,15 +25,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
 			return
 		}
-		user , err := services.GetUserForLogin(loginReq.PhoneNumber, loginReq.Password)
+		user, err := services.GetUserForLogin(loginReq.PhoneNumber, loginReq.Password)
 		if err != nil {
 			fmt.Print(user)
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusForbidden)
 			return
 		}
-		
+
 		otp := utils.GenerateOTP(loginReq.PhoneNumber, utils.Purposes["login"])
-	
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(fmt.Sprintf(`{"otp": "%s", "phonenumber": "%s"}`, otp, loginReq.PhoneNumber)))
@@ -42,12 +41,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	case "PUT":
 		var otpReq struct {
 			PhoneNumber string `json:"phonenumber"`
-			OTP 		string `json:"otp"`
+			OTP         string `json:"otp"`
 		}
 		err := json.NewDecoder(r.Body).Decode(&otpReq)
 		if err != nil {
 			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
-			return 
+			return
 		}
 		if !utils.ValidateOTP(otpReq.PhoneNumber, utils.Purposes["login"], otpReq.OTP) {
 			http.Error(w, `{"error": "Invalid OTP"}`, http.StatusUnauthorized)
@@ -90,9 +89,9 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, token)))
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) { 
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	userID, exists := vars["id"]  
+	userID, exists := vars["id"]
 	if !exists {
 		http.Error(w, "User ID is required", http.StatusBadRequest)
 		return
@@ -109,7 +108,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "you dont have permission", http.StatusBadRequest)
 		return
 	}
-	
+
 	var updateData models.User
 	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -144,10 +143,10 @@ func GetTickets(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func GetTicket(w http.ResponseWriter, r * http.Request) {
+func GetTicket(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ID := vars["id"]
-	ticketID, _ := uuid.Parse(ID) 
+	ticketID, _ := uuid.Parse(ID)
 	ticket := services.GetTicketDetails(ticketID)
 
 	result, err := json.Marshal(ticket)
@@ -192,10 +191,10 @@ func GetMyTickets(w http.ResponseWriter, r *http.Request) {
 func ReserveTicket(w http.ResponseWriter, r *http.Request) {
 	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
 	var requestBody struct {
-		UserID uuid.UUID `json:"user_id"`
-		TicketID uuid.UUID `json:"ticket_id"`
-		ReservationStatus string `json:"reservation_status"`
-		Number int `json:"number"`
+		UserID            uuid.UUID `json:"user_id"`
+		TicketID          uuid.UUID `json:"ticket_id"`
+		ReservationStatus string    `json:"reservation_status"`
+		Number            int       `json:"number"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -215,7 +214,7 @@ func ReserveTicket(w http.ResponseWriter, r *http.Request) {
 func PayReservation(w http.ResponseWriter, r *http.Request) {
 	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
 	vars := mux.Vars(r)
-	reservationid, exists := vars["id"]  
+	reservationid, exists := vars["id"]
 	if !exists {
 		http.Error(w, "Reservation ID is required", http.StatusBadRequest)
 		return
@@ -223,7 +222,7 @@ func PayReservation(w http.ResponseWriter, r *http.Request) {
 	reservationID, _ := uuid.Parse(reservationid)
 
 	paymentid, err := services.PayReservation(user.UserID, reservationID)
-	
+
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Payment failed"))
@@ -284,4 +283,72 @@ func GetAllCancelledTickets(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
+}
+
+func CheckCancellationPenalty(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	vars := mux.Vars(r)
+	ticketId, exists := vars["id"]
+	if !exists {
+		http.Error(w, "Reservation ID is required", http.StatusBadRequest)
+		return
+	}
+	ticketID, error := uuid.Parse(ticketId)
+	if error != nil {
+		fmt.Println("couldn't parse to uuid in CheckCancellationPenalty", error)
+		http.Error(w, "Invalid Reservation ID", http.StatusBadRequest)
+	}
+
+	penalty := services.CheckCancellationPenalty(user.UserID, ticketID)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`{"penalty": %d}`, penalty)))
+}
+
+func CancelReservation(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	vars := mux.Vars(r)
+	ticketId, exists := vars["id"]
+	if !exists {
+		http.Error(w, "Reservation ID is required", http.StatusBadRequest)
+		return
+	}
+	ticketIDuuid, error := uuid.Parse(ticketId)
+	if error != nil {
+		fmt.Println("couldn't parse to uuid in CancelReservation", error)
+		http.Error(w, "Invalid Reservation ID", http.StatusBadRequest)
+	}
+
+	err := services.CancelReservation(user.UserID, ticketIDuuid)
+	if err != nil {
+		http.Error(w, "Error cancelling reservation", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Reservation cancelled successfully"}`))
+}
+
+func EditTicket(w http.ResponseWriter, r *http.Request) {
+	user, _ := r.Context().Value(utils.UserContextKey).(*models.User)
+	if *user.UserType != "Admin" {
+		http.Error(w, "you do not have permission", http.StatusForbidden)
+		return
+	}
+
+	var ticket models.Ticket
+	if err := json.NewDecoder(r.Body).Decode(&ticket); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := services.UpdateTicket(ticket)
+	if err != nil {
+		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "Ticket updated successfully"}`))
 }
