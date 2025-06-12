@@ -134,3 +134,112 @@ WHERE NOT EXISTS (
     GROUP BY t.VehicleType
     HAVING COUNT(*) > 2
 );
+
+--------------------------------------------------------
+--14.ایمیل یا شماره تلفن کاربرانی که از تمام وسایل نقلیه (هواپیما، قطار و اتوبوس) حداقل یک بار بلیط خریده اند را برگردانید.
+--------------------------------------------------------
+
+SELECT DISTINCT u.Email, u.PhoneNumber
+FROM "User" u
+JOIN Reservation r ON u.UserID = r.UserID
+JOIN Ticket t ON r.TicketID = t.TicketID
+WHERE 'Airplane' IN (SELECT VehicleType FROM Ticket WHERE TicketID = r.TicketID)
+  AND 'Train' IN (SELECT VehicleType FROM Ticket WHERE TicketID = r.TicketID)
+  AND 'Bus' IN (SELECT VehicleType FROM Ticket WHERE TicketID = r.TicketID);
+
+--------------------------------------------------------
+--15.اطلاعات بلیط های خریداری شده امروز را با ترتیب ساعت خرید لیست کنید..
+--------------------------------------------------------
+
+SELECT t.*, r.ReservationTime
+FROM Ticket t
+JOIN Reservation r ON t.TicketID = r.TicketID
+WHERE DATE(r.ReservationTime) = CURRENT_DATE
+ORDER BY r.ReservationTime;
+
+--------------------------------------------------------
+--16.دومین بلیط پرفروش در بین کل بلیط ها را نمایش دهید.
+--------------------------------------------------------
+
+SELECT TicketID, COUNT(*) AS SalesCount
+FROM Reservation
+GROUP BY TicketID
+ORDER BY SalesCount DESC
+LIMIT 1 OFFSET 1;
+
+--------------------------------------------------------
+--17. نام پشتیبان با بیشترین تعداد لغو رزرو بلیط، همراه با درصد لغوها را برگردانید.
+--------------------------------------------------------
+
+SELECT u.FirstName, u.LastName,
+       COUNT(r.ReservationID) AS CanceledCount,
+       ROUND((COUNT(r.ReservationID) * 100.0) / (SELECT COUNT(*) FROM Reservation), 2) AS CancelPercentage
+FROM "User" u
+JOIN Reservation r ON u.UserID = r.UserID
+WHERE u.UserType = 'Supporter' AND r.ReservationStatus = 'Cancelled'
+GROUP BY u.UserID
+ORDER BY CanceledCount DESC
+LIMIT 1;
+
+--------------------------------------------------------
+--18.نام خانوادگی کاربری که بیشترین تعداد بلیط کنسل شده دارد را به "ردینگتون" تغییر دهید.
+--------------------------------------------------------
+
+UPDATE "User"
+SET LastName = 'ردینگتون'
+WHERE UserID = (
+    SELECT r.UserID
+    FROM Reservation r
+    WHERE r.ReservationStatus = 'Cancelled'
+    GROUP BY r.UserID
+    ORDER BY COUNT(*) DESC
+    LIMIT 1
+);
+
+--------------------------------------------------------
+--19.تمام بلیط های کنسل شده کاربر ردینگتون را حذف کنید.
+--------------------------------------------------------
+
+DELETE FROM Reservation
+WHERE UserID = (SELECT UserID FROM "User" WHERE LastName = 'ردینگتون')
+  AND ReservationStatus = 'Cancelled';
+
+--------------------------------------------------------
+--20.تمام بلیط های کنسل شده در سیستم را پاک کنید.
+--------------------------------------------------------
+
+DELETE FROM Reservation
+WHERE ReservationStatus = 'Cancelled';
+
+--------------------------------------------------------
+--21.قیمت بلیط هایی که دیروز توسط شرکت هواپیمایی ماهان فروخته شده اند را ٪1۰ کاهش دهید.
+--------------------------------------------------------
+
+UPDATE Ticket t
+SET TicketPrice = TicketPrice * 0.9
+WHERE t.TicketID IN (
+    SELECT f.TicketID 
+    FROM FlightDetails f
+    JOIN Ticket t ON f.TicketID = t.TicketID
+    JOIN Reservation r ON t.TicketID = r.TicketID
+    JOIN Payment p ON p.ReservationID = r.ReservationID
+    WHERE f.AirlineName = 'Mahan' 
+    AND p.PaymentStatus = 'Successful'
+    AND DATE(p.PaymentTime) = CURRENT_DATE - INTERVAL '1 day'
+);
+
+--------------------------------------------------------
+--22. موضوع و تعداد گزارش ها را برای بلیط با بیشترین تعداد گزارش، نمایش دهید.
+--------------------------------------------------------
+
+SELECT r.ReportCategory, COUNT(*) AS ReportCount
+FROM Reports r
+WHERE r.TicketID = (
+    SELECT TicketID
+    FROM Reports
+    GROUP BY TicketID
+    ORDER BY COUNT(*) DESC
+    LIMIT 1
+)
+GROUP BY r.ReportCategory;
+

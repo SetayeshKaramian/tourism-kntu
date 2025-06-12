@@ -1,66 +1,68 @@
 -----------------------------------------------------------
 --- 1. گرفتن کل بلیط های یک کاربر با استفاده از ایمیل او
 -----------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_tickets_of_users(user_email varchar(100))
-RETURNS TABLE (TicketID UUID,
-    VehicleType VARCHAR(20),
-    Origin VARCHAR(100),
-    Destination VARCHAR(100),
-    DepartureTime TIMESTAMP,
-    ArrivalTime TIMESTAMP,
-    TicketPrice DECIMAL(10,2),
-    RemainingCapacity INT,
-    CompanyID UUID,
-    TravelClass VARCHAR(20)) AS 
-$$
+CREATE OR REPLACE PROCEDURE get_tickets_of_users(
+	IN user_email VARCHAR(100))
+LANGUAGE plpgsql
+AS $$ 
+DECLARE 
+	tickets refcursor;
 BEGIN
-	RETURN QUERY SELECT t.* FROM ticket t JOIN reservation r ON t.ticketid = r.ticketid
+	tickets := 'tickets';
+	
+	OPEN tickets FOR 
+		SELECT t.* FROM ticket t JOIN reservation r ON t.ticketid = r.ticketid
 			   WHERE r.userid IN (SELECT userid FROM "User" WHERE email = user_email);
+			   
 END;
-$$ 
-LANGUAGE plpgsql;
+$$;
+
+CALL get_tickets_of_users('maryam.jafari@example.com');
+FETCH ALL FROM tickets;
 
 -----------------------------------------------------------
 --- 2. نشان دادن نام کاربرانی که حداقل یک بار بلیط ان ها کنسل شده با استفاده از ایمیل پشتیبان
 -----------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_users_with_cancelled_reservation_using_support_email(support_email varchar(100))
-RETURNS TABLE (
-	firstname varchar(50),
-  lastname varchar(50)) AS 
-$$
+CREATE OR REPLACE PROCEDURE get_users_with_cancelled_reservation_using_support_email(
+	IN support_email VARCHAR(100)
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+	users refcursor;
 BEGIN
-	IF support_email NOT IN (SELECT email FROM "User" WHERE usertype = 'Supporter') THEN
-		RAISE 'SUPPORTER NOT FOUND';
-	END IF;
-	RETURN QUERY SELECT u.firstname, u.lastname FROM "User" u JOIN reservation r 
-		ON u.userid = r.userid WHERE r.reservationstatus = 'Cancelled';
+	users := 'users';
+	
+	OPEN users FOR 
+		SELECT u.firstname, u.lastname FROM "User" u JOIN reservation r 
+			ON u.userid = r.userid WHERE r.reservationstatus = 'Cancelled';
 END;
-$$ 
-LANGUAGE plpgsql;
+$$;
+
+CALL get_users_with_cancelled_reservation_using_support_email('ehsan.shirazi@example.com');
+FETCH ALL FROM users;
 
 -----------------------------------------------------------
 --- 3. لیست بلیط های خریداری شده یک شهر با دریافت نام آن.
 -----------------------------------------------------------
-CREATE OR REPLACE FUNCTION get_bought_tickets_of_a_city(city varchar(100))
-RETURNS TABLE (TicketID UUID,
-    VehicleType VARCHAR(20),
-    Origin VARCHAR(100),
-    Destination VARCHAR(100),
-    DepartureTime TIMESTAMP,
-    ArrivalTime TIMESTAMP,
-    TicketPrice DECIMAL(10,2),
-    RemainingCapacity INT,
-    CompanyID UUID,
-    TravelClass VARCHAR(20)) AS 
-$$
+CREATE OR REPLACE PROCEDURE get_bought_tickets_of_a_city(
+	IN city VARCHAR(100)
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+	tickets refcursor;
 BEGIN 
-	RETURN QUERY SELECT t.* FROM ticket t 
+	tickets := 'tickets';
+	
+	OPEN tickets FOR 
+		SELECT t.* FROM ticket t 
 		JOIN reservation r ON t.ticketid = r.ticketid
 		JOIN payment p ON p.reservationid = r.reservationid
 		WHERE p.paymentstatus = 'Successful' AND t.destination = city;
 END;
-$$
-LANGUAGE plpgsql;
+$$;
+
+CALL get_bought_tickets_of_a_city('Mashhad');
+FETCH ALL FROM tickets;
 
 -----------------------------------------------------------
 -- عبارتی را از ورودی گرفته و بلیطهایی را که آن عبارت در نام مسافر، مسیر سفر یا کلاس بلیط آمده باشد را برگردانید.4
@@ -136,3 +138,98 @@ $$;
 
 CALL get_citizens_proc('09112345678');
 FETCH ALL FROM get_citizens_cursor;
+
+-----------------------------------------------------------
+--6.  کاربری که از آن تاریخ به بعد بیشترین خرید بلیط را داشتند نمایش دهید n تاریخ و تعداد را به عنوان ورودی دریافت کرده و لیست.
+-----------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE GetTopUsersByTickets_Proc(
+    IN p_start_date TIMESTAMP, 
+    IN p_limit INT
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    user_cursor refcursor;
+BEGIN
+    user_cursor := 'user_cursor';
+    
+    OPEN user_cursor FOR 
+        SELECT 
+            u.UserID, 
+            u.FirstName, 
+            u.LastName, 
+            COUNT(r.ReservationID) AS TicketCount
+        FROM "User" u
+        JOIN Reservation r ON u.UserID = r.UserID
+        WHERE r.ReservationTime >= p_start_date
+        GROUP BY u.UserID, u.FirstName, u.LastName
+        ORDER BY TicketCount DESC
+        LIMIT p_limit;
+END;
+$$;
+
+
+CALL GetTopUsersByTickets_Proc('2025-01-01', 5);
+FETCH ALL FROM user_cursor;
+
+-----------------------------------------------------------
+--7.با دریافت نوع وسیله نقلیه، لیست بلیط های کنسل شده مربوط به آن را به ترتیب تاریخ نمایش دهید.
+-----------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE GetCancelledTicketsByVehicle_Proc(
+    IN p_vehicle_type VARCHAR
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    ticket_cursor refcursor;
+BEGIN
+    ticket_cursor := 'ticket_cursor';
+    
+    OPEN ticket_cursor FOR 
+        SELECT 
+            t.TicketID, 
+            t.Origin, 
+            t.Destination, 
+            t.DepartureTime
+        FROM Ticket t
+        JOIN Reservation r ON t.TicketID = r.TicketID
+        WHERE r.ReservationStatus = 'Cancelled' 
+          AND t.VehicleType = p_vehicle_type
+        ORDER BY t.DepartureTime;
+END;
+$$;
+
+
+CALL GetCancelledTicketsByVehicle_Proc('Airplane');
+FETCH ALL FROM ticket_cursor;
+
+-----------------------------------------------------------
+--8.با دریافت موضوع گزارش، لیست کاربرانی که بیشترین گزارش در آن موضوع دارند را نمایش دهید.
+-----------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE GetTopReportersByCategory_Proc(
+    IN p_report_category VARCHAR
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    report_cursor refcursor;
+BEGIN
+    report_cursor := 'report_cursor';
+    
+    OPEN report_cursor FOR 
+        SELECT 
+            u.UserID, 
+            u.FirstName, 
+            u.LastName, 
+            COUNT(r.ReportID) AS ReportCount
+        FROM "User" u
+        JOIN Reports r ON u.UserID = r.UserID
+        WHERE r.ReportCategory = p_report_category
+        GROUP BY u.UserID, u.FirstName, u.LastName
+        ORDER BY ReportCount DESC;
+END;
+$$;
+
+
+CALL GetTopReportersByCategory_Proc('PaymentIssue');
+FETCH ALL FROM report_cursor;
