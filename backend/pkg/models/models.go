@@ -21,18 +21,17 @@ type User struct {
 }
 
 type Ticket struct {
-	TicketID          uuid.UUID `gorm:"column:ticketid"`
-	VehicleType       string    `gorm:"column:vehicletype"`
-	Origin            string    `gorm:"column:origin"`
-	Destination       string    `gorm:"column:destination"`
-	DepartureTime     time.Time `gorm:"column:departuretime"`
-	ArrivalTime       time.Time `gorm:"column:arrivaltime"`
-	TicketPrice       float64   `gorm:"column:ticketprice"`
-	RemainingCapacity int       `gorm:"column:remainingcapacity"`
-	CompanyID         uuid.UUID `gorm:"column:companyid"`
-	TravelClass       string    `gorm:"column:travelclass"`
+	TicketID          uuid.UUID `gorm:"column:ticketid" json:"ticket_id"`
+	VehicleType       string    `gorm:"column:vehicletype" json:"vehicle_type"`
+	Origin            string    `gorm:"column:origin" json:"origin"`
+	Destination       string    `gorm:"column:destination" json:"destination"`
+	DepartureTime     time.Time `gorm:"column:departuretime" json:"departure_time"`
+	ArrivalTime       time.Time `gorm:"column:arrivaltime" json:"arrival_time"`
+	TicketPrice       float64   `gorm:"column:ticketprice" json:"ticket_price"`
+	RemainingCapacity int       `gorm:"column:remainingcapacity" json:"remaining_capacity"`
+	CompanyID         uuid.UUID `gorm:"column:companyid" json:"company_id"`
+	TravelClass       string    `gorm:"column:travelclass" json:"travel_class"`
 }
-
 type TicketDetails struct {
 	TicketID          uuid.UUID `json:"ticket_id"`
 	VehicleType       string    `json:"vehicle_type"`
